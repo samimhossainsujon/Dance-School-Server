@@ -1,8 +1,7 @@
-const express = require('express')
+const express = require('express');
 const app = express();
 const cors = require("cors");
 const { MongoClient, ServerApiVersion } = require('mongodb');
-
 
 const port = process.env.PORT || 5000;
 require('dotenv').config();
@@ -10,12 +9,8 @@ require('dotenv').config();
 app.use(cors());
 app.use(express.json());
 
-
-
-
-
 //=================================
-//mongodb used configuration
+// MongoDB configuration
 //================================
 
 const uri = `mongodb+srv://${process.env.DV_USER}:${process.env.DV_PASS}@cluster0.f7u6kbd.mongodb.net/?retryWrites=true&w=majority`;
@@ -26,37 +21,41 @@ const client = new MongoClient(uri, {
         version: ServerApiVersion.v1,
         strict: true,
         deprecationErrors: true,
-    }
+    },
 });
 
 async function run() {
     try {
-       
-        // await client.connect();
+        await client.connect();
 
-        const serviceCollection = client.db('Assignment-11').collection('Assignment-11');
-        const bookingCollection = client.db('Assignment-11').collection('Assignment-11');
+        const Assignment11 = client.db('Assignment11').collection('Assignment11');
 
-    
-        app.get("/")
+        app.post("/addToy", async (req, res) => {
+            const body = req.body;
+            const result = await Assignment11.insertOne(body);
+            res.send(result);
+        });
 
 
-        
+        app.get('/allToy', async (req, res) => {
+            const result = await Assignment11.find({}).toArray();
+            res.send(result);
+        });
+
+
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
-       
         // await client.close();
     }
 }
+
 run().catch(console.dir);
 
-
 app.get('/', (req, res) => {
-    res.send('Hello World!')
-})
-
+    res.send('Hello World!');
+});
 
 app.listen(port, () => {
-    console.log(`Example app listening on port ${port}`)
-})
+    console.log(`Example app listening on port ${port}`);
+});
