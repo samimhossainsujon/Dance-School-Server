@@ -2,6 +2,7 @@ const express = require('express');
 const app = express();
 const cors = require("cors");
 const { MongoClient, ServerApiVersion } = require('mongodb');
+const { ObjectId } = require('mongodb');
 
 const port = process.env.PORT || 5000;
 require('dotenv').config();
@@ -30,17 +31,116 @@ async function run() {
 
         const Assignment11 = client.db('Assignment11').collection('Assignment11');
 
+        const indexKeys = { ToyName: 1 };
+        const indexOptions = { name: "ToyName" };
+        const result = await Assignment11.createIndex(indexKeys, indexOptions);
+
+        app.get('/allToySearch/:text', async (req, res) => {
+            const searchText = req.params.text;
+            try {
+                const result = await Assignment11.find({
+                    ToyName: { $regex: searchText, $options: "i" }
+                }).toArray();
+                res.send(result);
+                console.log(result);
+            } catch (error) {
+                console.log(error);
+                res.status(500).send('Internal Server Error');
+            }
+        });
+
+
+
+
         app.post("/addToy", async (req, res) => {
             const body = req.body;
             const result = await Assignment11.insertOne(body);
             res.send(result);
         });
 
+        //==================================
+        // all toy section 
+        //================================
 
         app.get('/allToy', async (req, res) => {
             const result = await Assignment11.find({}).toArray();
             res.send(result);
         });
+
+        //================================
+        // update data form id 
+        //=================================
+
+        app.get('/updateMyToys/:id', async (req, res) => {
+            const id = req.params.id;
+            const myToy = await Assignment11.findOne();
+            res.send(myToy);
+        });
+
+
+
+        //=====================================
+        // update a single data form id 
+        //======================================
+
+        app.put('/updateMyToys/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) };
+            const options = { upsert: true };
+            const UpdatedData = req.body;
+            const update = {
+                $set: {
+                    photoUrl: UpdatedData.photoUrl,
+                    ToyName: UpdatedData.ToyName,
+                    price: UpdatedData.price,
+                    rating: UpdatedData.rating,
+                    availableQuantity: UpdatedData.availableQuantity,
+                    SellerName: UpdatedData.SellerName,
+                    detailsPage: UpdatedData.detailsPage,
+                    sellerEmail: UpdatedData.sellerEmail,
+                }
+            }
+            const result = await Assignment11.updateOne(filter, update, options);
+            res.send(result);
+        });
+
+
+
+        //========================================
+        // delete a single date from my toys 
+        //==========================================
+
+        app.delete('/updateMyToys/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) }
+            const result = await Assignment11.deleteOne(query);
+            res.send(result);
+        })
+
+
+
+
+
+
+
+
+        //==================================
+        // my post toys section
+        //================================
+
+        app.get('/myToys/:sellerEmail', async (req, res) => {
+            try {
+                const result = await Assignment11.find({ sellerEmail: req.params.sellerEmail }).toArray();
+                res.send(result);
+            } catch (error) {
+                console.log(error);
+                res.status(500).send('Internal Server Error');
+            }
+        });
+
+
+
+
 
 
         await client.db("admin").command({ ping: 1 });
