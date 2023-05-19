@@ -71,10 +71,15 @@ async function run() {
         // update data form id 
         //=================================
 
-        app.get('/updateMyToys/:id', async (req, res) => {
+        app.get('/UpdateMyToys/:id', async (req, res) => {
             const id = req.params.id;
-            const myToy = await Assignment11.findOne();
-            res.send(myToy);
+            console.log(id);
+            // const myToy = await Assignment11.findOne({_id: new ObjectId(id)});
+            const query = {_id: new ObjectId(id)}
+            const result = await Assignment11.findOne(query)
+            console.log(query);
+            res.send(result);
+
         });
 
 
