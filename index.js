@@ -63,8 +63,16 @@ async function run() {
         //================================
 
         app.get('/allToy', async (req, res) => {
-            const result = await Assignment11.find({}).toArray();
-            res.send(result);
+            try {
+                const result = await Assignment11.find({}).toArray();
+                const limit = req.query.limit || 20;
+                const limitedToyData = result.slice(0, limit); // Use 'result' instead of 'toyData'
+
+                res.json(limitedToyData);
+            } catch (error) {
+                console.log(error);
+                res.status(500).json({ error: 'Internal server error' });
+            }
         });
 
         //================================
@@ -75,7 +83,7 @@ async function run() {
             const id = req.params.id;
             console.log(id);
             // const myToy = await Assignment11.findOne({_id: new ObjectId(id)});
-            const query = {_id: new ObjectId(id)}
+            const query = { _id: new ObjectId(id) }
             const result = await Assignment11.findOne(query)
             console.log(query);
             res.send(result);
@@ -120,7 +128,35 @@ async function run() {
             const query = { _id: new ObjectId(id) }
             const result = await Assignment11.deleteOne(query);
             res.send(result);
-        })
+        });
+
+
+
+        //========================================
+        // ToyDetails added 
+        //=========================================
+
+        app.get('/ToyDetails/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) }
+            const result = await Assignment11.findOne(query)
+            console.log(query);
+            res.send(result);
+
+        });
+
+
+
+
+        //========================================
+        // sub categories 
+        //==========================================
+
+        // app.get('/dataToy/:category', (req, res) => {
+        //     const { category } = req.params;
+        //     const filteredToys = toys.filter(toy => toy.category === category);
+        //     res.json(filteredToys);
+        // });
 
 
 
