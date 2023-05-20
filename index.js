@@ -162,14 +162,14 @@ async function run() {
                 const result = await Assignment11.find({ status: req.params.text }).toArray();
                 console.log(result);
 
-                const limit = req.query.limit || 20;
+                const limit = req.query.limit || 3;
                 const limitedToyData = result.slice(0, limit);
 
                 return res.json(limitedToyData);
             }
             const result = await Assignment11.find({}).toArray();
             console.log(result);
-            const limit = req.query.limit || 20;
+            const limit = req.query.limit || 3;
             const limitedToyData = result.slice(0, limit);
             res.json(limitedToyData);
         });
