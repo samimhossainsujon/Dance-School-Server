@@ -27,7 +27,7 @@ const client = new MongoClient(uri, {
 
 async function run() {
     try {
-        await client.connect();
+        // await client.connect();
 
         const Assignment11 = client.db('Assignment11').collection('Assignment11');
 
@@ -153,31 +153,23 @@ async function run() {
         //==========================================
 
         app.get("/allToy/:text", async (req, res) => {
-            console.log(req.params.text);
+            
             if (
                 req.params.text === "Programmable" ||
                 req.params.text === "RemoteControl" ||
                 req.params.text === "TransformingRobots"
             ) {
-                const result = await Assignment11.find({ status: req.params.text }).toArray();
-                console.log(result);
-
-                const limit = req.query.limit || 3;
+                const result = await Assignment11.
+                find({ status: req.params.text }).toArray();
+                 const limit = req.query.limit || 3;
                 const limitedToyData = result.slice(0, limit);
-
                 return res.json(limitedToyData);
             }
-            const result = await Assignment11.find({}).toArray();
-            console.log(result);
+            const result = await Assignment11.find({}).toArray();           
             const limit = req.query.limit || 3;
             const limitedToyData = result.slice(0, limit);
             res.json(limitedToyData);
         });
-
-
-
-
-
 
 
 
@@ -195,8 +187,6 @@ async function run() {
                 res.status(500).send('Internal Server Error');
             }
         });
-
-
 
 
 
