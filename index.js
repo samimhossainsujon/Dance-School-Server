@@ -66,7 +66,7 @@ async function run() {
             try {
                 const result = await Assignment11.find({}).toArray();
                 const limit = req.query.limit || 20;
-                const limitedToyData = result.slice(0, limit); // Use 'result' instead of 'toyData'
+                const limitedToyData = result.slice(0, limit);
 
                 res.json(limitedToyData);
             } catch (error) {
@@ -152,11 +152,28 @@ async function run() {
         // sub categories 
         //==========================================
 
-        // app.get('/dataToy/:category', (req, res) => {
-        //     const { category } = req.params;
-        //     const filteredToys = toys.filter(toy => toy.category === category);
-        //     res.json(filteredToys);
-        // });
+        app.get("/allToy/:text", async (req, res) => {
+            console.log(req.params.text);
+            if (
+                req.params.text === "Programmable" ||
+                req.params.text === "RemoteControl" ||
+                req.params.text === "TransformingRobots"
+            ) {
+                const result = await Assignment11.find({ status: req.params.text }).toArray();
+                console.log(result);
+
+                const limit = req.query.limit || 20;
+                const limitedToyData = result.slice(0, limit);
+
+                return res.json(limitedToyData);
+            }
+            const result = await Assignment11.find({}).toArray();
+            console.log(result);
+            const limit = req.query.limit || 20;
+            const limitedToyData = result.slice(0, limit);
+            res.json(limitedToyData);
+        });
+
 
 
 
