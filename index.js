@@ -153,19 +153,19 @@ async function run() {
         //==========================================
 
         app.get("/allToy/:text", async (req, res) => {
-            
+
             if (
                 req.params.text === "Programmable" ||
                 req.params.text === "RemoteControl" ||
                 req.params.text === "TransformingRobots"
             ) {
                 const result = await Assignment11.
-                find({ status: req.params.text }).toArray();
-                 const limit = req.query.limit || 3;
+                    find({ status: req.params.text }).toArray();
+                const limit = req.query.limit || 3;
                 const limitedToyData = result.slice(0, limit);
                 return res.json(limitedToyData);
             }
-            const result = await Assignment11.find({}).toArray();           
+            const result = await Assignment11.find({}).toArray();
             const limit = req.query.limit || 3;
             const limitedToyData = result.slice(0, limit);
             res.json(limitedToyData);
@@ -180,13 +180,19 @@ async function run() {
 
         app.get('/myToys/:sellerEmail', async (req, res) => {
             try {
-                const result = await Assignment11.find({ sellerEmail: req.params.sellerEmail }).toArray();
+                const result = await Assignment11.find({ sellerEmail: req.params.sellerEmail }).sort({ price: -1 }).toArray();
                 res.send(result);
             } catch (error) {
                 console.log(error);
                 res.status(500).send('Internal Server Error');
             }
         });
+
+
+      
+      
+            
+           
 
 
 
