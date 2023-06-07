@@ -62,7 +62,7 @@ async function run() {
             const query = { _id: new ObjectId(id) }
             const result = await usersCollection.deleteOne(query);
             res.send(result);
-        })
+        });
 
 
 
