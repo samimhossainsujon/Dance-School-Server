@@ -16,7 +16,7 @@ app.use(express.json());
 
 const uri = `mongodb+srv://${process.env.DV_USER}:${process.env.DV_PASS}@cluster0.f7u6kbd.mongodb.net/?retryWrites=true&w=majority`;
 
-// Create a MongoClient with a MongoClientOptions object to set the Stable API version
+
 const client = new MongoClient(uri, {
     serverApi: {
         version: ServerApiVersion.v1,
@@ -27,30 +27,47 @@ const client = new MongoClient(uri, {
 
 async function run() {
     try {
-     
+        const usersCollection = client.db("Assignment12").collection("users");
 
-        const Assignment11 = client.db('Assignment11').collection('Assignment11');
 
-      
-
-        // //==================================
-        // // all toy section 
-        // //================================
-
-        app.get('/allToy', async (req, res) => {
-            try {
-                const result = await Assignment11.find({}).toArray();
-                const limit = req.query.limit || 20;
-                const limitedToyData = result.slice(0, limit);
-
-                res.json(limitedToyData);
-            } catch (error) {
-                console.log(error);
-                res.status(500).json({ error: 'Internal server error' });
-            }
+        app.post('/users', async (req, res) => {
+            const users = req.body;
+            const result = await usersCollection.insertOne(users);
+            res.send(result);
         });
 
-       
+        app.get('/users', async (req, res) => {
+            const result = await usersCollection.find().toArray();
+            res.send(result);
+        });
+
+
+        app.patch('/users/admin/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = {_id: new ObjectId(id)};
+
+            const updatedDoc = {
+                $set:{
+                    role: 'admin',
+                }
+            };
+            const result = await usersCollection.updateOne(query, updatedDoc);
+            res.send(result);
+
+        });
+
+
+        app.delete('/users/:id',  async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) }
+            const result = await usersCollection.deleteOne(query);
+            res.send(result);
+        })
+
+
+
+
+
 
 
 
