@@ -11,6 +11,12 @@ require('dotenv').config();
 app.use(cors());
 app.use(express.json());
 
+
+
+//====================================
+// jwt verify function
+//=====================================
+
 const VerifyJWT = (req, res, next) => {
     const authorization = req.headers.authorization;
     if (!authorization) {
@@ -32,7 +38,6 @@ const VerifyJWT = (req, res, next) => {
 // MongoDB configuration
 //================================
 
-
 const uri = `mongodb+srv://${process.env.DV_USER}:${process.env.DV_PASS}@cluster0.f7u6kbd.mongodb.net/?retryWrites=true&w=majority`;
 
 
@@ -46,10 +51,18 @@ const client = new MongoClient(uri, {
 
 async function run() {
     try {
+
+        //====================================
+        // all collection methods
+        //=====================================
+
         const usersCollection = client.db("Assignment12").collection("users");
         const ClassCollection = client.db("Assignment12").collection("class");
+        const InstructorCollection = client.db("Assignment12").collection("instructor");
 
-
+        //====================================
+        //jwt access token 
+        //=====================================
         app.post('/jwt', (req, res) => {
             const user = req.body;
             const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' });
@@ -72,6 +85,11 @@ async function run() {
         }
 
 
+
+        //====================================
+        // dashboard admin routes
+        //=====================================
+
         app.get('/users/admin/:email', VerifyJWT, VerifyAdmin, async (req, res) => {
             const email = req.params.email;
             if (req.decoded.email !== email) {
@@ -83,6 +101,11 @@ async function run() {
             res.send(result);
         });
 
+
+
+        //====================================
+        // dashboard instructor added 
+        //=====================================
 
         app.get('/users/instructor/:email', VerifyJWT, async (req, res) => {
             const email = req.params.email;
@@ -96,6 +119,9 @@ async function run() {
         });
 
 
+        //====================================
+        // user data post request
+        //=====================================
 
         app.post('/users', async (req, res) => {
             const users = req.body;
@@ -105,11 +131,20 @@ async function run() {
 
 
 
+        //====================================
+        // users get request
+        //=====================================
+
         app.get('/users', async (req, res) => {
             const result = await usersCollection.find().toArray();
             res.send(result);
         });
 
+
+
+        //====================================
+        // admin routes patch 
+        //=====================================
 
         app.patch('/users/admin/:id', async (req, res) => {
             const id = req.params.id;
@@ -126,6 +161,10 @@ async function run() {
         });
 
 
+        //====================================
+        // instructor patch request
+        //=====================================
+
         app.patch('/users/instructor/:id', async (req, res) => {
             const id = req.params.id;
             const filter = { _id: new ObjectId(id) };
@@ -141,17 +180,20 @@ async function run() {
         });
 
 
+        //====================================
+        // user delete  method
+        //=====================================
 
         app.delete('/users/:id', async (req, res) => {
             const id = req.params.id;
-            const query = { _id: new ObjectId(id) }
-            const result = await usersCollection.deleteOne(query);
+            const query = { _id: ObjectId(id) };
+            const result = await ClassCollection.deleteOne(query);
             res.send(result);
         });
 
 
         //=================================
-        // class added 
+        // new class added 
         //===================================
 
         app.post('/newClassAdd', async (req, res) => {
@@ -162,13 +204,75 @@ async function run() {
 
 
 
-        app.get('/newClassAdd', async (req, res) => {
-            const result = await ClassCollection.find().toArray();
+        app.delete('/ClassData/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) }
+            const result = await ClassCollection.deleteOne(query);
             res.send(result);
         });
 
 
 
+        //====================================
+        // new class get request
+        //=====================================
+
+        app.get('/newClassAdd', async (req, res) => {
+            const result = await ClassCollection.find().toArray();
+            res.send(result);
+        });
+
+        //====================================
+        //  updated  class 
+        //=====================================
+
+        app.put('/UpdateClass/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) };
+            const options = { upsert: true };
+            const UpdatedData = req.body;
+            const updatedDoc = {
+                $set: {
+                    photoUrl: UpdatedData.photoUrl,
+                    ClassName: UpdatedData.ClassName,
+                    InstructorName: UpdatedData.InstructorName,
+                    InstructorEmail: UpdatedData.InstructorEmail,
+                    Price: UpdatedData.Price,
+                    AvailableSeats: UpdatedData.AvailableSeats,
+                    Rating: UpdatedData.Rating
+                }
+            };
+            const result = await ClassCollection.updateOne(filter, updatedDoc, options);
+            res.send(result);
+
+        });
+
+
+
+
+
+
+
+        app.post('/newInstructorAdd', async (req, res) => {
+            const newClass = req.body;
+            const result = await InstructorCollection.insertOne(newClass);
+            res.send(result);
+        })
+
+
+
+        app.get('/Instructor', async (req, res) => {
+            const result = await InstructorCollection.find().toArray();
+            res.send(result);
+        });
+
+
+        app.delete('/InstructorData/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) }
+            const result = await InstructorCollection.deleteOne(query);
+            res.send(result);
+        });
 
 
 
