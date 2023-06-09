@@ -59,6 +59,7 @@ async function run() {
         const usersCollection = client.db("Assignment12").collection("users");
         const ClassCollection = client.db("Assignment12").collection("class");
         const InstructorCollection = client.db("Assignment12").collection("instructor");
+        const StudentCollection = client.db("Assignment12").collection("student");
 
         //====================================
         //jwt access token 
@@ -93,7 +94,7 @@ async function run() {
         app.get('/users/admin/:email', VerifyJWT, VerifyAdmin, async (req, res) => {
             const email = req.params.email;
             if (req.decoded.email !== email) {
-                return res.send({ admin: true });
+                return res.send({ admin: false });
             }
             const query = { email: email };
             const user = await usersCollection.findOne(query);
@@ -110,13 +111,16 @@ async function run() {
         app.get('/users/instructor/:email', VerifyJWT, async (req, res) => {
             const email = req.params.email;
             if (req.decoded.email !== email) {
-                return res.send({ instructor: true });
+                return res.send({ instructor: false });
             }
             const query = { email: email };
             const user = await usersCollection.findOne(query);
             const result = { instructor: user?.role === 'instructor' };
             res.send(result);
         });
+
+
+
 
 
         //====================================
@@ -197,7 +201,7 @@ async function run() {
         //===================================
 
         app.post('/newClassAdd', async (req, res) => {
-            const newClass = req.body;
+            const newClass = req.body;            
             const result = await ClassCollection.insertOne(newClass);
             res.send(result);
         })
@@ -245,6 +249,7 @@ async function run() {
             const result = await ClassCollection.updateOne(filter, updatedDoc, options);
             res.send(result);
 
+
         });
 
 
@@ -273,6 +278,31 @@ async function run() {
             const result = await InstructorCollection.deleteOne(query);
             res.send(result);
         });
+
+
+
+        app.post('/student', async (req, res) => {
+            const cartItem = req.query;
+            const result = await StudentCollection.insertOne(cartItem);
+            res.send(result);
+        });
+
+
+
+
+        app.get('/student', async (req, res) => {
+            const email = req.query.email;
+            let query = {}; 
+            if (!email) {
+                res.send([]);
+            } else {
+                query = { email: email };
+            }
+
+            const result = await StudentCollection.find(query).toArray();
+            res.send(result);
+        });
+
 
 
 
