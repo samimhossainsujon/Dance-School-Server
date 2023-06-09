@@ -201,7 +201,7 @@ async function run() {
         //===================================
 
         app.post('/newClassAdd', async (req, res) => {
-            const newClass = req.body;            
+            const newClass = req.body;
             const result = await ClassCollection.insertOne(newClass);
             res.send(result);
         })
@@ -225,6 +225,16 @@ async function run() {
             const result = await ClassCollection.find().toArray();
             res.send(result);
         });
+
+
+
+        app.get('/PopularClass', async (req, res) => {
+            const result = await ClassCollection.find({}).toArray();
+            const limit = req.query.limit || 6;
+            const limitedToyData = result.slice(0, limit);
+            res.json(limitedToyData);
+        });
+
 
         //====================================
         //  updated  class 
@@ -272,6 +282,14 @@ async function run() {
         });
 
 
+        app.get('/PopularInstructor', async (req, res) => {
+            const result = await InstructorCollection.find({}).toArray();
+            const limit = req.query.limit || 6;
+            const limitedToyData = result.slice(0, limit);
+            res.json(limitedToyData);
+        });
+
+
         app.delete('/InstructorData/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) }
@@ -281,27 +299,46 @@ async function run() {
 
 
 
+
+
+
         app.post('/student', async (req, res) => {
-            const cartItem = req.query;
-            const result = await StudentCollection.insertOne(cartItem);
+            const BuyClass = req.body;
+            const result = await StudentCollection.insertOne(BuyClass);
+            res.send(result);
+        });
+
+        app.get('/Student', async (req, res) => {
+            const result = await StudentCollection.find().toArray();
             res.send(result);
         });
 
 
 
+        // app.get('/Student', async (req, res) => {
+        //     const email = req.query.email;
+        //     if (!email) {
+        //       res.send([]);
+        //       return; // Add this line to stop the execution if email is not provided
+        //     }
+        //     const query = { email: email };
+        //     const result = await StudentCollection.find(query).toArray();
+        //     res.send(result);
+        //   });
 
-        app.get('/student', async (req, res) => {
-            const email = req.query.email;
-            let query = {}; 
-            if (!email) {
-                res.send([]);
-            } else {
-                query = { email: email };
-            }
 
-            const result = await StudentCollection.find(query).toArray();
-            res.send(result);
+        app.delete('/Student/:id', async (req, res) => {           
+                const id = req.params.id;
+                const query = { _id: new ObjectId(id) };
+                const result = await StudentCollection.deleteOne(query);
+                res.send(result);            
         });
+
+
+
+
+
+
 
 
 
