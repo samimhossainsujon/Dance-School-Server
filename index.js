@@ -1,12 +1,18 @@
 const express = require('express');
 const app = express();
 const cors = require("cors");
+
 var jwt = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const { ObjectId } = require('mongodb');
-
 const port = process.env.PORT || 5000;
 require('dotenv').config();
+
+
+
+
+
+
 
 app.use(cors());
 app.use(express.json());
@@ -60,6 +66,7 @@ async function run() {
         const ClassCollection = client.db("Assignment12").collection("class");
         const InstructorCollection = client.db("Assignment12").collection("instructor");
         const StudentCollection = client.db("Assignment12").collection("student");
+        const StudentPaymentCollection = client.db("Assignment12").collection("payment");
 
         //====================================
         //jwt access token 
@@ -313,28 +320,28 @@ async function run() {
             res.send(result);
         });
 
+        app.get('/student/:userEmail', async (req, res) => {
+            try {
+                const result = await StudentCollection.find({ userEmail: req.params.userEmail }).toArray();
+                res.send(result);
+            } catch (error) {
+                console.error('Error retrieving student data:', error);
+                res.status(500).send('Failed to retrieve student data.');
+            }
+        });
 
-
-        // app.get('/Student', async (req, res) => {
-        //     const email = req.query.email;
-        //     if (!email) {
-        //       res.send([]);
-        //       return; // Add this line to stop the execution if email is not provided
-        //     }
-        //     const query = { email: email };
-        //     const result = await StudentCollection.find(query).toArray();
-        //     res.send(result);
-        //   });
-
-
-        app.delete('/Student/:id', async (req, res) => {           
-                const id = req.params.id;
-                const query = { _id: new ObjectId(id) };
-                const result = await StudentCollection.deleteOne(query);
-                res.send(result);            
+        app.delete('/Student/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await StudentCollection.deleteOne(query);
+            res.send(result);
         });
 
 
+
+        app.post('/payment', async (req, res) => {
+            console.log(req.body);
+        })
 
 
 
