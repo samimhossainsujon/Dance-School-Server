@@ -1,7 +1,6 @@
 const express = require('express');
 const app = express();
 const cors = require("cors");
-
 var jwt = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const { ObjectId } = require('mongodb');
@@ -9,8 +8,7 @@ const port = process.env.PORT || 5000;
 require('dotenv').config();
 
 
-
-
+const stripe = require("stripe")(process.env.Payment_Secret_Key);
 
 
 
@@ -26,12 +24,12 @@ app.use(express.json());
 const VerifyJWT = (req, res, next) => {
     const authorization = req.headers.authorization;
     if (!authorization) {
-        return res.status(401).send({ error: true, message: 'unauthorized access' });
+        return res.status(401).send({ error: true, message: 'try aging' });
     }
     const token = authorization.split(' ')[1];
-    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (error, decoded) => {
-        if (error) {
-            return res.status(401).send({ error: true, message: 'unauthorized access' })
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+        if (err) {
+            return res.status(401).send({ error: true, message: 'try aging' })
         }
         req.decoded = decoded;
         next();
@@ -83,13 +81,12 @@ async function run() {
 
         const VerifyAdmin = async (req, res, next) => {
             const email = req.decoded.email;
-            const query = { email: email };
+            const query = { email: email }
             const user = await usersCollection.findOne(query);
             if (user?.role !== 'admin') {
-                return res.status(404).send({ error: true, message: "forbidden message" });
+                return res.status(403).send({ error: true, message: 'try aging' });
             }
             next();
-
         }
 
 
@@ -330,7 +327,7 @@ async function run() {
             }
         });
 
-        app.delete('/Student/:id', async (req, res) => {
+        app.delete('/CartStudent/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
             const result = await StudentCollection.deleteOne(query);
@@ -339,17 +336,22 @@ async function run() {
 
 
 
-        app.post('/payment', async (req, res) => {
-            console.log(req.body);
-        })
-
-
-
-
-
-
-
-
+        app.post("/create-payment-intent", async (req, res) => {
+            const { Price } = req.body;
+            const amount = Price * 100;
+            console.log(Price)
+            console.log(amount)
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                currency: 'usd',
+                payment_method_types: ['card']
+            })
+            res.send({
+                clientSecret: paymentIntent.client_secret,
+            });
+        })       
+             
+          
 
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");

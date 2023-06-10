@@ -17,6 +17,6 @@
     "jsonwebtoken": "^9.0.0",
     "mongodb": "^5.5.0",
     "react-query": "^3.39.3",
-    "sslcommerz-lts": "^1.1.0"
+    "stripe": "^12.9.0"
   }
 }
