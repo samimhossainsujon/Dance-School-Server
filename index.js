@@ -4,8 +4,8 @@ const cors = require("cors");
 var jwt = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const { ObjectId } = require('mongodb');
-const port = process.env.PORT || 5000;
 require('dotenv').config();
+const port = process.env.PORT || 5000;
 
 
 const stripe = require("stripe")(process.env.Payment_Secret_Key);
@@ -143,7 +143,7 @@ async function run() {
         // users get request
         //=====================================
 
-        app.get('/users', async (req, res) => {
+        app.get('/users',   async (req, res) => {
             const result = await usersCollection.find().toArray();
             res.send(result);
         });
@@ -151,10 +151,10 @@ async function run() {
 
 
         //====================================
-        // admin routes patch 
+        // admin routes patch d
         //=====================================
 
-        app.patch('/users/admin/:id', async (req, res) => {
+        app.patch('/users/admin/:id', VerifyJWT,VerifyAdmin, async (req, res) => {
             const id = req.params.id;
             const filter = { _id: new ObjectId(id) };
 
@@ -192,10 +192,10 @@ async function run() {
         // user delete  method
         //=====================================
 
-        app.delete('/users/:id', async (req, res) => {
+        app.delete('/users/:id', VerifyJWT, VerifyAdmin, async (req, res) => {
             const id = req.params.id;
-            const query = { _id: ObjectId(id) };
-            const result = await ClassCollection.deleteOne(query);
+            const query = { _id: new ObjectId(id) };
+            const result = await usersCollection.deleteOne(query);
             res.send(result);
         });
 
