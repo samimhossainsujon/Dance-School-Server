@@ -445,6 +445,15 @@ async function run() {
         });
 
 
+        app.get('/CourseEnrollClass/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email: email }
+            const result = await StudentPaymentCollection.find(query).toArray();
+            res.send(result);
+        });
+
+
+
 
 
 
