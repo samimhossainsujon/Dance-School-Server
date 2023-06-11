@@ -65,6 +65,7 @@ async function run() {
         const InstructorCollection = client.db("Assignment12").collection("instructor");
         const StudentCollection = client.db("Assignment12").collection("student");
         const StudentPaymentCollection = client.db("Assignment12").collection("payment");
+        const adminFeedbackCollection = client.db("Assignment12").collection("adminFeedback");
 
         //====================================
         //jwt access token 
@@ -340,53 +341,113 @@ async function run() {
             const query = { email: email }
             const result = await StudentCollection.find(query).toArray();
             res.send(result);
-        })
+        });
 
 
-      
+
         app.post('/create-payment-intent', VerifyJWT, async (req, res) => {
-          try {
-            const { price } = req.body;
-            console.log(price)
-            const amount = parseInt(price * 100);
-            const paymentIntent = await stripe.paymentIntents.create({
-              amount: amount,
-              currency: 'usd',
-              payment_method_types: ['card'],
-            });
-            res.send({
-              clientSecret: paymentIntent.client_secret,
-            });
-          } catch (error) {
-            console.error('Error creating payment intent:', error);
-            res.status(500).send({ error: 'Failed to create payment intent.' });
-          }
+            try {
+                const { price } = req.body;
+                console.log(price)
+                const amount = parseInt(price * 100);
+                const paymentIntent = await stripe.paymentIntents.create({
+                    amount: amount,
+                    currency: 'usd',
+                    payment_method_types: ['card'],
+                });
+                res.send({
+                    clientSecret: paymentIntent.client_secret,
+                });
+            } catch (error) {
+                console.error('Error creating payment intent:', error);
+                res.status(500).send({ error: 'Failed to create payment intent.' });
+            }
         });
-        
+
         // Process payment
-        app.post('/payments',VerifyJWT, async (req, res) => {
-          try {
-            const payment = req.body;
-        
-            const query = { _id: { $in: payment.addItems.map((id) => new ObjectId(id)) } };
-            const insertResult = await StudentPaymentCollection.insertOne(payment);
-            const deleteResult = await StudentCollection.deleteOne(query);
-        
-            res.send({ insertResult, deleteResult });
-          } catch (error) {
-            console.error('Error processing payment:', error);
-            res.status(500).send({ error: 'Failed to process payment.' });
-          }
+        app.post('/payments', VerifyJWT, async (req, res) => {
+            try {
+                const payment = req.body;
+
+                const query = { _id: { $in: payment.addItems.map((id) => new ObjectId(id)) } };
+                const insertResult = await StudentPaymentCollection.insertOne(payment);
+                const deleteResult = await StudentCollection.deleteOne(query);
+
+                res.send({ insertResult, deleteResult });
+            } catch (error) {
+                console.error('Error processing payment:', error);
+                res.status(500).send({ error: 'Failed to process payment.' });
+            }
         });
-        
+
 
 
         app.get('/payments', async (req, res) => {
             // const email = req.params.email;
             // const query = { email: email }
-            const result = await StudentCollection.find().toArray();
+            const result = await StudentPaymentCollection.find().toArray();
             res.send(result);
-        })
+        });
+
+
+
+
+
+        app.patch('/payments/Approve/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) };
+
+            const updatedDoc = {
+                $set: {
+                    status: 'Approve',
+                }
+            };
+            const result = await StudentPaymentCollection.updateOne(filter, updatedDoc);
+            res.send(result);
+
+        });
+
+
+
+        app.patch('/payments/Deny/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) };
+            const updatedDoc = {
+                $set: {
+                    status: 'Deny',
+                },
+            };
+            const result = await StudentPaymentCollection.updateOne(filter, updatedDoc);
+            res.send(result);
+        });
+
+
+
+        app.post('/payments/Deny/:id', async (req, res) => {
+            const feedback = req.body.feedback;
+            const result = await adminFeedbackCollection.insertOne({ feedback });
+            res.send(result);
+        });
+
+
+        app.get('/InstructorFeedback', async (req, res) => {
+            const result = await adminFeedbackCollection.find().toArray();
+            res.send(result);
+        });
+
+
+
+        app.get('/PaymentHistory/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email: email }
+            const result = await StudentPaymentCollection.find(query).toArray();
+            res.send(result);
+        });
+
+
+
+
+
 
 
 
