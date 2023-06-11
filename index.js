@@ -143,7 +143,7 @@ async function run() {
         // users get request
         //=====================================
 
-        app.get('/users',   async (req, res) => {
+        app.get('/users', async (req, res) => {
             const result = await usersCollection.find().toArray();
             res.send(result);
         });
@@ -154,7 +154,7 @@ async function run() {
         // admin routes patch d
         //=====================================
 
-        app.patch('/users/admin/:id', VerifyJWT,VerifyAdmin, async (req, res) => {
+        app.patch('/users/admin/:id', async (req, res) => {
             const id = req.params.id;
             const filter = { _id: new ObjectId(id) };
 
@@ -192,7 +192,7 @@ async function run() {
         // user delete  method
         //=====================================
 
-        app.delete('/users/:id', VerifyJWT, VerifyAdmin, async (req, res) => {
+        app.delete('/users/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
             const result = await usersCollection.deleteOne(query);
@@ -274,7 +274,7 @@ async function run() {
 
         app.post('/newInstructorAdd', async (req, res) => {
             const newClass = req.body;
-            const result = await InstructorCollection.insertOne(newClass);
+            const result = await usersCollection.insertOne(newClass);
             res.send(result);
         })
 
@@ -335,23 +335,64 @@ async function run() {
         });
 
 
+        app.get('/student/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email: email }
+            const result = await StudentCollection.find(query).toArray();
+            res.send(result);
+        })
 
-        app.post("/create-payment-intent", async (req, res) => {
-            const { Price } = req.body;
-            const amount = Price * 100;
-            console.log(Price)
-            console.log(amount)
+
+      
+        app.post('/create-payment-intent', VerifyJWT, async (req, res) => {
+          try {
+            const { price } = req.body;
+            console.log(price)
+            const amount = parseInt(price * 100);
             const paymentIntent = await stripe.paymentIntents.create({
-                amount: amount,
-                currency: 'usd',
-                payment_method_types: ['card']
-            })
-            res.send({
-                clientSecret: paymentIntent.client_secret,
+              amount: amount,
+              currency: 'usd',
+              payment_method_types: ['card'],
             });
-        })       
-             
-          
+            res.send({
+              clientSecret: paymentIntent.client_secret,
+            });
+          } catch (error) {
+            console.error('Error creating payment intent:', error);
+            res.status(500).send({ error: 'Failed to create payment intent.' });
+          }
+        });
+        
+        // Process payment
+        app.post('/payments',VerifyJWT, async (req, res) => {
+          try {
+            const payment = req.body;
+        
+            const query = { _id: { $in: payment.addItems.map((id) => new ObjectId(id)) } };
+            const insertResult = await StudentPaymentCollection.insertOne(payment);
+            const deleteResult = await StudentCollection.deleteOne(query);
+        
+            res.send({ insertResult, deleteResult });
+          } catch (error) {
+            console.error('Error processing payment:', error);
+            res.status(500).send({ error: 'Failed to process payment.' });
+          }
+        });
+        
+
+
+        app.get('/payments', async (req, res) => {
+            // const email = req.params.email;
+            // const query = { email: email }
+            const result = await StudentCollection.find().toArray();
+            res.send(result);
+        })
+
+
+
+
+
+
 
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
