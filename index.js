@@ -425,25 +425,21 @@ async function run() {
 
 
         app.post('/payments', VerifyJWT, async (req, res) => {
-            const body = req.body;
+            try {
+                const payment = req.body;
+                const insertResult = await StudentPaymentCollection.insertOne(payment);
 
-            const result = await StudentPaymentCollection.insertOne(body);
+                const deleteIds = payment.addItems.map((id) => new ObjectId(id));
+                const deleteResult = await StudentCollection.deleteMany({ _id: { $in: deleteIds } });
 
-            const query = { _id: { $in: body.cartItemId.map(id => new ObjectId(id)) } };
-            const deleteResult = await ClassCollection.deleteMany(query);
-
-            const filter = { _id: { $in: body.cartItemId.map(id => new ObjectId(id)) } };
-            const updateDoc = {
-                $inc: {
-                    AvailableSeats: -1,
-                    enroll: 1,
-                }
+                res.send({ insertResult, deleteResult });
+            } catch (error) {
+                console.error('Error processing payment:', error);
+                res.status(500).send({ error: 'Failed to process payment.' });
             }
-
-            const updateResult = await ClassCollection.updateMany(filter, updateDoc);
-            res.json({ result, deleteResult, updateResult });
-
         });
+
+
 
 
 
