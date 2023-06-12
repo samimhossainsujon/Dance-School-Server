@@ -92,6 +92,19 @@ async function run() {
 
 
 
+        const VerifyInstructor = async (req, res, next) => {
+            const email = req.decoded.email;
+            const query = { email: email }
+            const user = await usersCollection.findOne(query);
+            if (user?.role !== 'instructor') {
+                return res.status(403).send({ error: true, message: 'try aging' });
+            }
+            next();
+        }
+
+
+
+
         //====================================
         // dashboard admin routes
         //=====================================
@@ -113,7 +126,7 @@ async function run() {
         // dashboard instructor added 
         //=====================================
 
-        app.get('/users/instructor/:email', VerifyJWT, async (req, res) => {
+        app.get('/users/instructor/:email', VerifyJWT, VerifyInstructor, async (req, res) => {
             const email = req.params.email;
             if (req.decoded.email !== email) {
                 return res.send({ instructor: false });
@@ -132,8 +145,13 @@ async function run() {
         // user data post request
         //=====================================
 
-        app.post('/users', async (req, res) => {
+        app.post('/users', VerifyJWT, async (req, res) => {
             const users = req.body;
+            const query = { email: users.email };
+            const existingUser = await usersCollection.findOne(query);
+            if (existingUser) {
+                return res.send('success');
+            }
             const result = await usersCollection.insertOne(users);
             res.send(result);
         });
@@ -213,6 +231,9 @@ async function run() {
 
 
 
+
+
+
         app.delete('/ClassData/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) }
@@ -226,9 +247,28 @@ async function run() {
         // new class get request
         //=====================================
 
-        app.get('/newClassAdd', async (req, res) => {
+        app.get('/adminNewClassAdd', async (req, res) => {
             const result = await ClassCollection.find().toArray();
             res.send(result);
+        });
+
+
+
+        app.get('/newClassAdd', async (req, res) => {
+            const requestedStatus = req.query.status;
+            let result = [];
+
+            if (requestedStatus === 'approved') {
+                result = await ClassCollection.find({ status: 'approved' }).toArray();
+            } else if (requestedStatus === 'pending') {
+                result = [];
+            } else {
+                result = await ClassCollection.find().toArray();
+            }
+
+            const limit = req.query.limit || 6;
+            const limitedData = result.slice(0, limit);
+            res.json(limitedData);
         });
 
 
@@ -239,6 +279,26 @@ async function run() {
             const limitedToyData = result.slice(0, limit);
             res.json(limitedToyData);
         });
+
+        // ==========================================
+
+        app.get('/PopularClass', async (req, res) => {
+            const requestedStatus = req.query.status;
+            let result = [];
+
+            if (requestedStatus === 'approved') {
+                result = await ClassCollection.find({ status: 'approved' }).toArray();
+            } else if (requestedStatus === 'pending') {
+                result = [];
+            } else {
+                result = await ClassCollection.find().toArray();
+            }
+
+            const limit = req.query.limit || 6;
+            const limitedData = result.slice(0, limit);
+            res.json(limitedData);
+        });
+
 
 
         //====================================
@@ -313,19 +373,18 @@ async function run() {
             res.send(result);
         });
 
+
         app.get('/Student', async (req, res) => {
             const result = await StudentCollection.find().toArray();
             res.send(result);
         });
 
+        // =================================================================
+
         app.get('/student/:userEmail', async (req, res) => {
-            try {
-                const result = await StudentCollection.find({ userEmail: req.params.userEmail }).toArray();
-                res.send(result);
-            } catch (error) {
-                console.error('Error retrieving student data:', error);
-                res.status(500).send('Failed to retrieve student data.');
-            }
+            const result = await StudentCollection.find({ userEmail: req.params.userEmail }).toArray();
+            res.send(result);
+
         });
 
         app.delete('/CartStudent/:id', async (req, res) => {
@@ -364,22 +423,28 @@ async function run() {
             }
         });
 
-        // Process payment
+
         app.post('/payments', VerifyJWT, async (req, res) => {
-            try {
-                const payment = req.body;
+            const body = req.body;
 
-                const query = { _id: { $in: payment.addItems.map((id) => new ObjectId(id)) } };
-                const insertResult = await StudentPaymentCollection.insertOne(payment);
-                const deleteResult = await StudentCollection.deleteOne(query);
+            const result = await StudentPaymentCollection.insertOne(body);
 
-                res.send({ insertResult, deleteResult });
-            } catch (error) {
-                console.error('Error processing payment:', error);
-                res.status(500).send({ error: 'Failed to process payment.' });
+            const query = { _id: { $in: body.cartItemId.map(id => new ObjectId(id)) } };
+            const deleteResult = await ClassCollection.deleteMany(query);
+
+            const filter = { _id: { $in: body.cartItemId.map(id => new ObjectId(id)) } };
+            const updateDoc = {
+                $inc: {
+                    AvailableSeats: -1,
+                    enroll: 1,
+                }
             }
+
+            const updateResult = await ClassCollection.updateMany(filter, updateDoc);
+            res.json({ result, deleteResult, updateResult });
+
         });
-        
+
 
 
 
@@ -394,23 +459,22 @@ async function run() {
 
 
 
-        app.patch('/payments/Approve/:id', async (req, res) => {
+        app.patch('/AdminStatus/Approve/:id', async (req, res) => {
             const id = req.params.id;
             const filter = { _id: new ObjectId(id) };
-
             const updatedDoc = {
                 $set: {
                     status: 'Approve',
                 }
             };
-            const result = await StudentPaymentCollection.updateOne(filter, updatedDoc);
+            const result = await ClassCollection.updateOne(filter, updatedDoc);
             res.send(result);
 
         });
 
 
 
-        app.patch('/payments/Deny/:id', async (req, res) => {
+        app.patch('/AdminStatus/Deny/:id', async (req, res) => {
             const id = req.params.id;
             const filter = { _id: new ObjectId(id) };
             const updatedDoc = {
@@ -418,13 +482,13 @@ async function run() {
                     status: 'Deny',
                 },
             };
-            const result = await StudentPaymentCollection.updateOne(filter, updatedDoc);
+            const result = await ClassCollection.updateOne(filter, updatedDoc);
             res.send(result);
         });
 
 
 
-        app.post('/payments/Deny/:id', async (req, res) => {
+        app.post('/AdminStatus/Deny/:id', async (req, res) => {
             const feedback = req.body.feedback;
             const result = await adminFeedbackCollection.insertOne({ feedback });
             res.send(result);
